@@ -74,23 +74,19 @@
 
       ws.onmessage = (event) => {
       const message = event.data;
-      if (match) {
-        const intensity = parseFloat(match[1]);
-        console.log("Received intensity:", intensity, "°C");
+      const intensity = parseFloat(match[1]);
+      console.log("Received intensity:", intensity, "°C");
 
-        // Update chart with intensity data
-        chart.data.labels.push(new Date().toLocaleTimeString());
-        chart.data.datasets[0].data.push(intensity);
+      // Update chart with intensity data
+      chart.data.labels.push(new Date().toLocaleTimeString());
+      chart.data.datasets[0].data.push(intensity);
+      chart.update();
+
+      // Limit to last 20 data points
+      if (chart.data.labels.length > 20) {
+        chart.data.labels.shift();
+        chart.data.datasets[0].data.shift();
         chart.update();
-
-        // Limit to last 20 data points
-        if (chart.data.labels.length > 20) {
-          chart.data.labels.shift();
-          chart.data.datasets[0].data.shift();
-          chart.update();
-        }
-      } else {
-        console.error("Invalid sensor data format:", message);
       }
     };
 
