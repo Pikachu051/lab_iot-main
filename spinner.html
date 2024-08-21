@@ -75,8 +75,8 @@
       ws.onmessage = (event) => {
       const message = event.data;
       if (match) {
-        const intensity = parseFloat(match[1]);
-        console.log("Received intensity:", intensity, "°C");
+        const intensity = parseFloat(message);
+        console.log("Received intensity:", intensity, "%");
 
         // Update chart with intensity data
         chart.data.labels.push(new Date().toLocaleTimeString());
