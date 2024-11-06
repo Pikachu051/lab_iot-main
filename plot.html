@@ -18,8 +18,9 @@
 </head>
 <body class="bg-gray-100">
   <div class="container max-w-4xl mx-auto pt-12">
-    <h1 class="text-3xl font-bold text-gray-800 mb-8">Environmental Data from Raspberry Pi</h1>
-
+    <h1 class="text-3xl font-bold text-gray-800 mb-1">Environmental Data from Raspberry Pi with AI Rain Prediction</h1>
+    <h2 class="text-xl font-bold text-gray-800 ">Model Accuracy 79.41%</h2> 
+    <p class="text-gray-600 mb-8 mt-2">AI ถูก train ด้วยข้อมูลย้อนหลังจากกรมอุตุวิทยาจำนวนกว่า 170 รายการด้วยวิธีการ Logistic Regression</p>
     <div class="bg-white rounded-lg shadow-md p-8 mb-8">
       <div class="flex items-center justify-between mb-6">
         <div id="client-status" class="flex items-center">
@@ -48,16 +49,16 @@
 
     <div class="bg-white rounded-lg shadow-md p-8">
       <h2 class="text-lg font-semibold text-gray-800 mb-6">Temperature and Humidity History</h2>
-      <canvas id="chart-1" class="w-full h-[300px]"></canvas>
+      <!-- ปรับความสูงของกราฟให้เหมาะสม -->
+      <canvas id="chart-1" class="w-full h-[250px]"></canvas>
     </div>
   </div>
 
   <script>
-    const socket = new WebSocket('wss://8abf4071c2e302.lhr.life');
-    let chart = null;
+    const socket = new WebSocket('wss://17ad3ec1f92314.lhr.life');
     const ctx = document.getElementById("chart-1");
-    const chartData = new Chart(ctx, {
-      type: "line",
+      const chart = new Chart(ctx, {
+        type: "line",
         data: {
           labels: [],
           datasets: [
@@ -80,40 +81,15 @@
         // ... rest of the options
       });
 
-    function initChart() {
-      const ctx = document.getElementById("chart-1");
-      chart = new Chart(ctx, {
-        type: "line",
-        data: chartData,
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            x: {
-              type: 'time',
-              time: {
-                unit: 'second',
-                displayFormats: {
-                  second: 'HH:mm:ss'
-                },
-                parser: (value) => new Date(value),
-              }
-            }
-          }
-        },
-      });
-    }
-
     socket.addEventListener('open', () => {
       document.getElementById('connection-status').textContent = 'Connected';
       document.getElementById('status-indicator').classList.remove('bg-red-500');
       document.getElementById('status-indicator').classList.add('bg-green-500');
-      initChart();
     });
 
     socket.addEventListener('message', (event) => {
       const [temperature, humidity, rainPrediction] = event.data.split(',');
-      updateDashboard(new Date().getTime(), parseFloat(temperature), parseFloat(humidity), rainPrediction.trim());
+      updateDashboard(parseFloat(temperature), parseFloat(humidity), rainPrediction.trim());
     });
 
     socket.addEventListener('close', () => {
@@ -122,22 +98,24 @@
       document.getElementById('client-status').classList.add('bg-red-500');
     });
 
-    function updateDashboard(timestamp, temperature, humidity, rainPrediction) {
+    function updateDashboard(temperature, humidity, rainPrediction) {
       document.getElementById('temperature').textContent = temperature.toFixed(1) + '°C';
       document.getElementById('humidity').textContent = humidity.toFixed(1) + '%';
       document.getElementById('rain-prediction').textContent = rainPrediction;
 
-      chartData.labels.push(timestamp);
-      chartData.datasets[0].data.push(temperature);
-      chartData.datasets[1].data.push(humidity);
+      // อัพเดตข้อมูลในกราฟ
+      chart.data.labels.push(new Date().toLocaleTimeString());
+      chart.data.datasets[0].data.push(temperature);
+      chart.data.datasets[1].data.push(humidity);
 
-      // Limit to last 15 data points
-      if (chartData.labels.length > 15) {
-        chartData.labels.shift();
-        chartData.datasets[0].data.shift();
-        chartData.datasets[1].data.shift();
+      // จำกัดข้อมูลในกราฟให้มีแค่ 15 จุด
+      if (chart.data.labels.length > 15) {
+        chart.data.labels.shift();
+        chart.data.datasets[0].data.shift();
+        chart.data.datasets[1].data.shift();
       }
 
+      // อัพเดตกราฟ
       chart.update();
     }
   </script>
