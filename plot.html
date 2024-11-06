@@ -13,7 +13,7 @@
     <div class="mt-8">
       <div class="flex items-center">
         <div id="client-status" class="flex items-center">
-          <div class="w-4 h-4 bg-red-500 rounded-full"></div>
+          <div id="status-indicator" class="w-4 h-4 bg-red-500 rounded-full"></div>
           <span class="ml-2" id="connection-status">Connecting...</span>
         </div>
       </div>
@@ -43,8 +43,8 @@
 
     socket.addEventListener('open', () => {
       document.getElementById('connection-status').textContent = 'Connected';
-      document.getElementById('connection-status').classList.remove('bg-red-500');
-      document.getElementById('connection-status').classList.add('bg-green-500');
+      document.getElementById('status-indicator').classList.remove('bg-red-500');
+      document.getElementById('status-indicator').classList.add('bg-green-500');
     });
 
     socket.addEventListener('message', (event) => {
