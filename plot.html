@@ -4,52 +4,110 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Environmental Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: 'Nunito', sans-serif;
+    }
+  </style>
 </head>
-<body>
-  <div class="container max-w-3xl mx-auto pt-16">
-    <h1 class="font-bold text-2xl" id="dashboard-title">Environmental Data from Raspberry Pi</h1>
+<body class="bg-gray-100">
+  <div class="container max-w-4xl mx-auto pt-12">
+    <h1 class="text-3xl font-bold text-gray-800 mb-8">Environmental Data from Raspberry Pi</h1>
 
-    <div class="mt-8">
-      <div class="flex items-center">
+    <div class="bg-white rounded-lg shadow-md p-8 mb-8">
+      <div class="flex items-center justify-between mb-6">
         <div id="client-status" class="flex items-center">
           <div id="status-indicator" class="w-4 h-4 bg-red-500 rounded-full"></div>
-          <span class="ml-2" id="connection-status">Connecting...</span>
+          <span class="ml-2 text-gray-600" id="connection-status">Connecting...</span>
+        </div>
+        <h2 class="text-lg font-semibold text-gray-800">Sensor Data</h2>
+      </div>
+
+      <div class="grid grid-cols-2 gap-6">
+        <div>
+          <h3 class="text-gray-600 font-medium mb-2">Temperature</h3>
+          <p class="text-5xl font-bold text-gray-800" id="temperature">--</p>
+        </div>
+        <div>
+          <h3 class="text-gray-600 font-medium mb-2">Humidity</h3>
+          <p class="text-5xl font-bold text-gray-800" id="humidity">--</p>
         </div>
       </div>
 
-      <div class="mt-4">
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <h2 class="font-medium text-lg">Temperature</h2>
-            <p class="text-4xl" id="temperature">--</p>
-          </div>
-          <div>
-            <h2 class="font-medium text-lg">Humidity</h2>
-            <p class="text-4xl" id="humidity">--</p>
-          </div>
-        </div>
+      <div class="mt-6">
+        <h3 class="text-gray-600 font-medium mb-2">Rain Prediction</h3>
+        <p class="text-2xl font-bold text-gray-800" id="rain-prediction">--</p>
       </div>
+    </div>
 
-      <div class="mt-4">
-        <h2 class="font-medium text-lg">Rain Prediction</h2>
-        <p class="text-2xl" id="rain-prediction">--</p>
-      </div>
+    <div class="bg-white rounded-lg shadow-md p-8">
+      <h2 class="text-lg font-semibold text-gray-800 mb-6">Temperature and Humidity History</h2>
+      <canvas id="chart-1" class="w-full h-[300px]"></canvas>
     </div>
   </div>
 
   <script>
     const socket = new WebSocket('wss://9aeca280f0f758.lhr.life');
+    let chart = null;
+    const chartData = {
+      labels: [],
+      datasets: [
+        {
+          label: "Temperature (°C)",
+          data: [],
+          fill: false,
+          borderColor: "rgb(75, 192, 192)",
+          tension: 0.1,
+        },
+        {
+          label: "Humidity (%)",
+          data: [],
+          fill: false,
+          borderColor: "rgb(192, 75, 75)",
+          tension: 0.1,
+        },
+      ],
+    };
+
+    function initChart() {
+      const ctx = document.getElementById("chart-1");
+      chart = new Chart(ctx, {
+        type: "line",
+        data: chartData,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              type: 'time',
+              time: {
+                unit: 'second',
+                displayFormats: {
+                  second: 'HH:mm:ss'
+                },
+                parser: (value) => new Date(value),
+              }
+            }
+          }
+        },
+      });
+    }
 
     socket.addEventListener('open', () => {
       document.getElementById('connection-status').textContent = 'Connected';
       document.getElementById('status-indicator').classList.remove('bg-red-500');
       document.getElementById('status-indicator').classList.add('bg-green-500');
+      initChart();
     });
 
     socket.addEventListener('message', (event) => {
       const [temperature, humidity, rainPrediction] = event.data.split(',');
-      updateDashboard(parseFloat(temperature), parseFloat(humidity), rainPrediction.trim());
+      updateDashboard(new Date().getTime(), parseFloat(temperature), parseFloat(humidity), rainPrediction.trim());
     });
 
     socket.addEventListener('close', () => {
@@ -58,10 +116,23 @@
       document.getElementById('client-status').classList.add('bg-red-500');
     });
 
-    function updateDashboard(temperature, humidity, rainPrediction) {
+    function updateDashboard(timestamp, temperature, humidity, rainPrediction) {
       document.getElementById('temperature').textContent = temperature.toFixed(1) + '°C';
       document.getElementById('humidity').textContent = humidity.toFixed(1) + '%';
       document.getElementById('rain-prediction').textContent = rainPrediction;
+
+      chartData.labels.push(timestamp);
+      chartData.datasets[0].data.push(temperature);
+      chartData.datasets[1].data.push(humidity);
+
+      // Limit to last 15 data points
+      if (chartData.labels.length > 15) {
+        chartData.labels.shift();
+        chartData.datasets[0].data.shift();
+        chartData.datasets[1].data.shift();
+      }
+
+      chart.update();
     }
   </script>
 </body>
