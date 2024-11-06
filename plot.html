@@ -48,8 +48,8 @@
     });
 
     socket.addEventListener('message', (event) => {
-      const data = JSON.parse(event.data);
-      updateDashboard(data.temperature, data.humidity, data.rainPrediction);
+      const [temperature, humidity, rainPrediction] = event.data.split(',');
+      updateDashboard(parseFloat(temperature), parseFloat(humidity), rainPrediction.trim());
     });
 
     socket.addEventListener('close', () => {
