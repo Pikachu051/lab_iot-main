@@ -17,6 +17,7 @@
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/luxon@3.2.1/build/global/luxon.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
@@ -75,7 +76,8 @@
                 unit: 'second',
                 displayFormats: {
                   second: 'HH:mm:ss'
-                }
+                },
+                parser: (value) => Luxon.DateTime.fromMillis(value),
               }
             }
           }
@@ -92,7 +94,7 @@
 
     socket.addEventListener('message', (event) => {
       const [temperature, humidity, rainPrediction] = event.data.split(',');
-      updateChart(parseFloat(temperature), parseFloat(humidity));
+      updateChart(new Date().getTime(), parseFloat(temperature), parseFloat(humidity));
     });
 
     socket.addEventListener('close', () => {
@@ -101,9 +103,8 @@
       document.getElementById('client-status').classList.add('bg-red-500');
     });
 
-    function updateChart(temperature, humidity) {
-      const now = new Date();
-      chartData.labels.push(now.toLocaleTimeString());
+    function updateChart(timestamp, temperature, humidity) {
+      chartData.labels.push(timestamp);
       chartData.datasets[0].data.push(temperature);
       chartData.datasets[1].data.push(humidity);
 
