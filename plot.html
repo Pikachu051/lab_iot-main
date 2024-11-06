@@ -39,7 +39,7 @@
   </div>
 
   <script>
-    const socket = new WebSocket('wss://125bdc30a4df11.lhr.lifes');
+    const socket = new WebSocket('wss://125bdc30a4df11.lhr.life');
 
     socket.addEventListener('open', () => {
       document.getElementById('connection-status').textContent = 'Connected';
@@ -48,8 +48,8 @@
     });
 
     socket.addEventListener('message', (event) => {
-      const data = JSON.parse(event.data);
-      updateDashboard(data.temperature, data.humidity, data.rainPrediction);
+      const [temperature, humidity, rainPrediction] = event.data.split(',');
+      updateDashboard(parseFloat(temperature), parseFloat(humidity), rainPrediction.trim());
     });
 
     socket.addEventListener('close', () => {
@@ -61,7 +61,7 @@
     function updateDashboard(temperature, humidity, rainPrediction) {
       document.getElementById('temperature').textContent = temperature.toFixed(1) + '°C';
       document.getElementById('humidity').textContent = humidity.toFixed(1) + '%';
-      document.getElementById('rain-prediction').textContent = rainPrediction ? 'Yes' : 'No';
+      document.getElementById('rain-prediction').textContent = rainPrediction;
     }
   </script>
 </body>
